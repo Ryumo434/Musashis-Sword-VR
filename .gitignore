@@ -1,0 +1,31 @@
+# === Unity generierte Ordner ===
+[Ll]ibrary/
+[Tt]emp/
+[Oo]bj/
+[Bb]uild/
+[Bb]uilds/
+[Ll]ogs/
+UserSettings/
+MemoryCaptures/
+
+# === VS / Rider / IDE Zeug ===
+.vscode/
+.idea/
+.vs/
+*.csproj
+*.sln
+*.suo
+*.user
+*.userprefs
+
+# === Autogeneriertes ===
+*.pidb
+*.booproj
+*.svd
+*.pdb
+*.mdb
+*.opendb
+*.VC.db
+
+# === Crash Logs etc. ===
+sysinfo.txt
