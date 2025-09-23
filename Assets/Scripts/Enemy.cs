@@ -74,6 +74,7 @@ public class EnemyAI : MonoBehaviour
             if (currentState != "Attacking")
             {
                 currentState = "Attacking";
+                agent.isStopped = true;
                 Debug.Log("Attacking!");
             }
         }
@@ -82,6 +83,7 @@ public class EnemyAI : MonoBehaviour
             if (currentState != "Chasing")
             {
                 currentState = "Chasing";
+                agent.isStopped = false;
                 Debug.Log("Player detected! Chasing...");
             }
             agent.SetDestination(player.position);
@@ -91,6 +93,7 @@ public class EnemyAI : MonoBehaviour
             if (currentState != "Patrolling")
             {
                 currentState = "Patrolling";
+                agent.isStopped = false;
                 Debug.Log("Player lost. Resuming patrol...");
                 Patrol();
             }
