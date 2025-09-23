@@ -12,6 +12,7 @@ public class EnemyAI : MonoBehaviour
     public float moveSpeed = 3f;
     public float patrolRange = 5f;
     public float waitTime = 2f;
+
     public float health, maxHealth = 10;
 
     private string currentState = "Patrolling";
@@ -28,6 +29,7 @@ public class EnemyAI : MonoBehaviour
 
     void Start()
     {
+        health = maxHealth;
         agent = GetComponent<NavMeshAgent>();
         agent.speed = moveSpeed;
         healthBar.UpdateHealthBar(health, maxHealth);
@@ -121,10 +123,16 @@ public class EnemyAI : MonoBehaviour
         isWaiting = false;
     }
     
-    void TakeDamage(int damage)
+    public void TakeDamage(int damage)
     {
         health -= damage;
         healthBar.UpdateHealthBar(health, maxHealth);
-        Debug.Log("Enemy took damage! Health: " + health);
+        Debug.Log(gameObject.name + " took damage! Health: " + health);
+
+        if (health <= 0)
+        {
+            Debug.Log(gameObject.name + " defeated!");
+            Destroy(gameObject);
+        }
     }
 }
