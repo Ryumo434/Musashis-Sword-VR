@@ -1,4 +1,5 @@
 ﻿using System.Collections;
+using UnityEditor.Callbacks;
 using UnityEngine;
 using UnityEngine.AI;
 
@@ -6,19 +7,30 @@ public class EnemyAI : MonoBehaviour
 {
     public Transform player;
     public float detectionRange = 10f;
-    public float attackRange = 2f;
+    public float enemyAttackRange = 2f;
+    public float playerAttackRange = 2f;
     public float moveSpeed = 3f;
     public float patrolRange = 5f;
     public float waitTime = 2f;
+    public float health, maxHealth = 10;
 
     private string currentState = "Patrolling";
     private NavMeshAgent agent;
     private bool isWaiting = false;
+    [SerializeField] floatingHealthBar healthBar;
+    Rigidbody rb;
+
+    private void Awake()
+    {
+        rb = GetComponent<Rigidbody>();
+        healthBar = GetComponentInChildren<floatingHealthBar>();
+    }
 
     void Start()
     {
         agent = GetComponent<NavMeshAgent>();
         agent.speed = moveSpeed;
+        healthBar.UpdateHealthBar(health, maxHealth);
 
         if (player == null)
         {
@@ -43,9 +55,20 @@ public class EnemyAI : MonoBehaviour
         }
 
         float distance = Vector3.Distance(transform.position, player.position);
-        Debug.Log("Distance to player: " + distance);
 
-        if (distance <= attackRange)
+        if (Input.GetMouseButtonDown(1) && distance <= playerAttackRange)
+        {
+            TakeDamage(1);
+        }
+        
+        if (health <= 0)
+        {
+            Debug.Log("Enemy defeated!");
+            Destroy(gameObject);
+            return;
+        }
+
+        if (distance <= enemyAttackRange)
         {
             if (currentState != "Attacking")
             {
@@ -75,9 +98,6 @@ public class EnemyAI : MonoBehaviour
             {
                 StartCoroutine(WaitAndPatrol());
             }
-            else
-            {
-            }
         }
     }
 
@@ -90,15 +110,21 @@ public class EnemyAI : MonoBehaviour
         if (NavMesh.SamplePosition(randomDirection, out hit, patrolRange, NavMesh.AllAreas))
         {
             agent.SetDestination(hit.position);
-            Debug.Log("Patrolling to: " + hit.position);
         }
     }
-    
+
     IEnumerator WaitAndPatrol()
     {
         isWaiting = true;
         yield return new WaitForSeconds(waitTime);
         Patrol();
         isWaiting = false;
+    }
+    
+    void TakeDamage(int damage)
+    {
+        health -= damage;
+        healthBar.UpdateHealthBar(health, maxHealth);
+        Debug.Log("Enemy took damage! Health: " + health);
     }
 }
