@@ -450,6 +450,19 @@ MonoBehaviour:
   waitTime: 2
   health: 0
   maxHealth: 10
+  attackAction:
+    m_UseReference: 1
+    m_Action:
+      m_Name: Attack
+      m_Type: 0
+      m_ExpectedControlType: 
+      m_Id: 94ca0336-bd53-4aca-9212-20cf51dc380d
+      m_Processors: 
+      m_Interactions: 
+      m_SingletonActionBindings: []
+      m_Flags: 0
+    m_Reference: {fileID: -1758520528963094988, guid: c348712bda248c246b8c49b3db54643f,
+      type: 3}
   healthBar: {fileID: 5833018841072201618}
 --- !u!195 &8894268464496412717
 NavMeshAgent:

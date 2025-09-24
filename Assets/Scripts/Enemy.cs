@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using UnityEngine;
 using UnityEngine.AI;
+using UnityEngine.InputSystem;
 
 public class EnemyAI : MonoBehaviour
 {
@@ -13,6 +14,7 @@ public class EnemyAI : MonoBehaviour
     public float waitTime = 2f;
 
     public float health, maxHealth = 10;
+    [SerializeField] private InputActionProperty attackAction; 
 
     private string currentState = "Patrolling";
     private NavMeshAgent agent;
@@ -57,7 +59,7 @@ public class EnemyAI : MonoBehaviour
 
         float distance = Vector3.Distance(transform.position, player.position);
 
-        if (Input.GetMouseButtonDown(1) && distance <= playerAttackRange)
+        if ((attackAction.action != null && attackAction.action.WasPerformedThisFrame() || Input.GetMouseButtonDown(1)) && distance <= playerAttackRange)
         {
             TakeDamage(1);
         }
