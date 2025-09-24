@@ -134,6 +134,7 @@ public class EnemyAI : MonoBehaviour
         if (health <= 0)
         {
             Debug.Log(gameObject.name + " defeated!");
+            AudioManager.Instance.Play(AudioManager.SoundType.Exlosion);
             Destroy(gameObject);
         }
     }
