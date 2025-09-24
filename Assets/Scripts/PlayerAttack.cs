@@ -6,6 +6,7 @@ public class PlayerAttack : MonoBehaviour
     public float attackRange = 2f;
     public int attackDamage = 1;
     public Camera cam; 
+    
 
     void Update()
     {
