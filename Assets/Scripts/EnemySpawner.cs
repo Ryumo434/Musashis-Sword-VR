@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.AI;
-using UnityEngine.InputSystem; // nur falls du AttackAction übergeben willst
+using UnityEngine.InputSystem;
 
 [System.Serializable]
 public struct EnemyConfig
@@ -25,10 +25,12 @@ public class EnemySpawner : MonoBehaviour
 {
     [Header("Prefab & Spawn")]
     public GameObject enemyPrefab;
-    public Transform spawnPoint;                 // wenn leer -> Position dieses GameObjects
+    public Transform spawnPoint;            
     public float intervalSeconds = 15f;
     public float firstDelay = 0f;
     public int maxAlive = -1;                    // -1 = unbegrenzt
+    public int CurrentAlive => alive.Count;
+    public event System.Action<int> OnAliveChanged;
 
     [Header("Enemy Parameters")]
     public EnemyConfig config = new EnemyConfig
@@ -85,7 +87,13 @@ public class EnemySpawner : MonoBehaviour
 
         var go = Instantiate(enemyPrefab, pos, rot);
         alive.Add(go);
-        go.AddComponent<DespawnTracker>().Init(() => alive.Remove(go));
+        go.AddComponent<DespawnTracker>().Init(() =>
+        {
+            alive.Remove(go);
+            OnAliveChanged?.Invoke(alive.Count);
+        });
+
+        OnAliveChanged?.Invoke(alive.Count);
 
         // --- Parameter setzen ---
         var ai = go.GetComponent<EnemyAI>();
