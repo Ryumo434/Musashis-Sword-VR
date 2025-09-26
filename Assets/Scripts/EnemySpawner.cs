@@ -29,8 +29,10 @@ public class EnemySpawner : MonoBehaviour
     public float intervalSeconds = 15f;
     public float firstDelay = 0f;
     public int maxAlive = -1;                    // -1 = unbegrenzt
+    public int maxTotalEnemies = 15;
     public int CurrentAlive => alive.Count;
     public event System.Action<int> OnAliveChanged;
+    
 
     [Header("Enemy Parameters")]
     public EnemyConfig config = new EnemyConfig
@@ -52,6 +54,7 @@ public class EnemySpawner : MonoBehaviour
 
     private readonly List<GameObject> alive = new();
     private Coroutine loop;
+    private int spawnedEnemies;
 
     void OnEnable() { loop = StartCoroutine(SpawnLoop()); }
     void OnDisable() { if (loop != null) StopCoroutine(loop); loop = null; }
@@ -69,7 +72,7 @@ public class EnemySpawner : MonoBehaviour
                 yield break;
             }
 
-            if (maxAlive < 0 || alive.Count < maxAlive)
+            if ((maxAlive < 0 || alive.Count < maxAlive) && spawnedEnemies < maxTotalEnemies)
                 SpawnOne();
 
             yield return wait;
@@ -87,6 +90,7 @@ public class EnemySpawner : MonoBehaviour
 
         var go = Instantiate(enemyPrefab, pos, rot);
         alive.Add(go);
+        spawnedEnemies++;
         go.AddComponent<DespawnTracker>().Init(() =>
         {
             alive.Remove(go);
