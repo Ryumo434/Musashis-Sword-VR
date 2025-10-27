@@ -24,7 +24,10 @@ public class floatingHealthBar : MonoBehaviour
 
     void LateUpdate()
     {
+
+      if (target == null || cam == null) return;
+
+        transform.position = target.position + offset;
         transform.LookAt(transform.position + cam.transform.forward);
-        transform.position = target.position + new Vector3(0, 1, 0);
     }
 }
