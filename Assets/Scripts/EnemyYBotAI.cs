@@ -170,6 +170,12 @@ public class EnemyYBotAI : MonoBehaviour
 
     IEnumerator Die()
     {
+
+        if (healthBar != null)
+        {
+            Destroy(healthBar.gameObject);
+        }
+
         isDead = true;
         currentState = "Dying";
         agent.isStopped = true;
@@ -181,12 +187,6 @@ public class EnemyYBotAI : MonoBehaviour
         // Warten bis die Death-Animation abgespielt ist
         yield return new WaitUntil(() => animator.GetCurrentAnimatorStateInfo(0).IsName("Dying"));
         yield return new WaitForSeconds(animator.GetCurrentAnimatorStateInfo(0).length);
-
-        if (healthBar != null)
-        {
-            Destroy(healthBar.gameObject);
-        }
-
 
         Debug.Log(gameObject.name + " destroyed!");
         Destroy(gameObject);

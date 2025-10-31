@@ -132,11 +132,11 @@ public class EnemyAI : MonoBehaviour
         health -= damage;
         healthBar.UpdateHealthBar(health, maxHealth);
         Debug.Log(gameObject.name + " took damage! Health: " + health);
+        AudioManager.Instance.Play(AudioManager.SoundType.EnemySmall_Damage_Light);
 
         if (health <= 0)
         {
             Debug.Log(gameObject.name + " defeated!");
-            AudioManager.Instance.Play(AudioManager.SoundType.Exlosion);
             Destroy(gameObject);
         }
     }

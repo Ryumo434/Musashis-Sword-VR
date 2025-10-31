@@ -5,10 +5,13 @@ public class AudioManager : MonoBehaviour
 {
     public enum SoundType
     {
-        EnemyDeath,
-        Exlosion,
-        EttiNaOto
-        // Add more sound types as needed
+        EnemySmall_Damage_Light,
+        EnemyLarge_Idle_heavy,
+        EnemyLarge_Die_heavy,
+        EnemySmall_Attack_light,
+        EnemySmall_Moan_light,
+        EnemyMiddle_Die_medium,
+        EnemyMiddle_Damage_medium
     }
  
     [System.Serializable]
