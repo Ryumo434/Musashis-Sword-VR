@@ -86,6 +86,7 @@ public class EnemyYBotAI : MonoBehaviour
         if ((attackAction.action != null && attackAction.action.WasPerformedThisFrame() || Input.GetMouseButtonDown(1)) && distance <= playerAttackRange)
         {
             TakeDamage(1);
+            AudioManager.Instance.Play(AudioManager.SoundType.EnemyMiddle_Damage_medium);
         }
 
         if (health <= 0 && !isDead)
@@ -99,11 +100,14 @@ public class EnemyYBotAI : MonoBehaviour
         {
             if (currentState != "Attacking")
             {
+                AudioManager.Instance.Stop(AudioManager.SoundType.Running);
+
                 currentState = "Attacking";
                 agent.isStopped = true;
                 animator.SetBool(isWalkingHash, false);
                 animator.SetBool(isRunningHash, false);
                 animator.SetBool(isAttackingHash, true);
+                StartCoroutine(PlayAttackSoundDelayed(0.5f));
                 Debug.Log("Attacking!");
             }
         }
@@ -111,11 +115,14 @@ public class EnemyYBotAI : MonoBehaviour
         {
             if (currentState != "Chasing")
             {
+                AudioManager.Instance.Stop(AudioManager.SoundType.EnemySmall_Attack_light);
+
                 currentState = "Chasing";
                 agent.isStopped = false;
                 animator.SetBool(isAttackingHash, false);
                 animator.SetBool(isWalkingHash, false);
                 animator.SetBool(isRunningHash, true);
+                AudioManager.Instance.PlayLoop(AudioManager.SoundType.Running);
                 Debug.Log("Player detected! Chasing...");
             }
             agent.SetDestination(player.position);
@@ -124,6 +131,8 @@ public class EnemyYBotAI : MonoBehaviour
         {
             if (currentState != "Patrolling")
             {
+                AudioManager.Instance.Stop(AudioManager.SoundType.Running);
+
                 currentState = "Patrolling";
                 agent.isStopped = false;
                 animator.SetBool(isAttackingHash, false);
@@ -168,6 +177,18 @@ public class EnemyYBotAI : MonoBehaviour
         Debug.Log(gameObject.name + " took damage! Health: " + health);
     }
 
+    IEnumerator PlayAttackSoundDelayed(float delay)
+    // Plays attack sound after a delay to sync with animation
+    {
+        yield return new WaitForSeconds(delay);
+
+        while (currentState == "Attacking")
+        {
+            AudioManager.Instance.Play(AudioManager.SoundType.EnemySmall_Attack_light);
+            Debug.Log("Played attack sound");
+            yield return new WaitForSeconds(2.7f);
+        }}
+
     IEnumerator Die()
     {
 
@@ -175,6 +196,9 @@ public class EnemyYBotAI : MonoBehaviour
         {
             Destroy(healthBar.gameObject);
         }
+
+        AudioManager.Instance.Stop(AudioManager.SoundType.EnemySmall_Attack_light);
+        AudioManager.Instance.Play(AudioManager.SoundType.EnemyMiddle_Die_medium);
 
         isDead = true;
         currentState = "Dying";

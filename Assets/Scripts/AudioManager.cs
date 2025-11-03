@@ -11,7 +11,10 @@ public class AudioManager : MonoBehaviour
         EnemySmall_Attack_light,
         EnemySmall_Moan_light,
         EnemyMiddle_Die_medium,
-        EnemyMiddle_Damage_medium
+        EnemyMiddle_Damage_medium,
+        Running,
+        Explosion,
+        Test
     }
  
     [System.Serializable]
@@ -32,9 +35,10 @@ public class AudioManager : MonoBehaviour
  
     //All sounds and their associated type - Set these in the inspector
     public Sound[] AllSounds;
- 
+
     //Runtime collections
     private Dictionary<SoundType, Sound> _soundDictionary = new Dictionary<SoundType, Sound>();
+    private Dictionary<SoundType, AudioSource> _loopingSources = new Dictionary<SoundType, AudioSource>();
     private AudioSource _musicSource;
  
     private void Awake()
@@ -48,9 +52,9 @@ public class AudioManager : MonoBehaviour
             _soundDictionary[s.Type] = s;
         }
     }
- 
- 
- 
+
+
+
     //Call this method to play a sound
     public void Play(SoundType type)
     {
@@ -60,22 +64,54 @@ public class AudioManager : MonoBehaviour
             Debug.LogWarning($"Sound type {type} not found!");
             return;
         }
- 
+
         //Creates a new sound object
         var soundObj = new GameObject($"Sound_{type}");
         var audioSrc = soundObj.AddComponent<AudioSource>();
- 
+
         //Assigns your sound properties
         audioSrc.clip = s.Clip;
         audioSrc.volume = s.Volume;
- 
+
         //Play the sound
         audioSrc.Play();
- 
+
         //Destroy the object
         Destroy(soundObj, s.Clip.length);
     }
  
+  public void PlayLoop(SoundType type)
+    {
+        if (_loopingSources.ContainsKey(type))
+            return; // bereits aktiv
+
+        if (!_soundDictionary.TryGetValue(type, out Sound s))
+        {
+            Debug.LogWarning($"Sound type {type} not found!");
+            return;
+        }
+
+        var soundObj = new GameObject($"LoopSound_{type}");
+        var audioSrc = soundObj.AddComponent<AudioSource>();
+
+        audioSrc.clip = s.Clip;
+        audioSrc.volume = s.Volume;
+        audioSrc.loop = true;
+        audioSrc.Play();
+
+        _loopingSources[type] = audioSrc;
+    }
+
+    // 🔸 Loop stoppen
+    public void Stop(SoundType type)
+    {
+        if (_loopingSources.TryGetValue(type, out AudioSource src))
+        {
+            src.Stop();
+            Destroy(src.gameObject);
+            _loopingSources.Remove(type);
+        }
+    }
     //Call this method to change music tracks
     public void ChangeMusic(SoundType type)
     {
