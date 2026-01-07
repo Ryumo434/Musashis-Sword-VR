@@ -9,7 +9,6 @@ public class EnemyYBotAI : MonoBehaviour
     public Transform player;
     private Animator animator;
     private NavMeshAgent agent;
-    private Rigidbody rb;
     [SerializeField] private floatingHealthBar healthBar;
     [SerializeField] private InputActionProperty attackAction; 
 
@@ -35,7 +34,6 @@ public class EnemyYBotAI : MonoBehaviour
 
     private void Awake()
     {
-        rb = GetComponent<Rigidbody>();
         agent = GetComponent<NavMeshAgent>();
         animator = GetComponent<Animator>();
         healthBar = GetComponentInChildren<floatingHealthBar>();
