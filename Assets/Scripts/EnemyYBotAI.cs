@@ -9,17 +9,19 @@ public class EnemyYBotAI : MonoBehaviour
     public Transform player;
     private Animator animator;
     private NavMeshAgent agent;
+    private bool isBoss;
+
     [SerializeField] private floatingHealthBar healthBar;
-    [SerializeField] private InputActionProperty attackAction; 
+    [SerializeField] private InputActionProperty attackAction;
 
     [Header("Stats")]
     [SerializeField] private float detectionRange = 10f;
     [SerializeField] private float enemyAttackRange = 2f;
     [SerializeField] private float playerAttackRange = 2f;
-   [SerializeField] private float moveSpeed = 3f;
+    [SerializeField] private float moveSpeed = 3f;
     [SerializeField] private float patrolRange = 5f;
     [SerializeField] private float waitTime = 2f;
-   [SerializeField] private float maxHealth = 10f;
+    [SerializeField] private float maxHealth = 10f;
     private float health;
 
     private string currentState = "Patrolling";
@@ -37,6 +39,8 @@ public class EnemyYBotAI : MonoBehaviour
         agent = GetComponent<NavMeshAgent>();
         animator = GetComponent<Animator>();
         healthBar = GetComponentInChildren<floatingHealthBar>();
+
+        isBoss = GetComponent<BossEnemy>() != null;
 
         // Animator parameter IDs
         isWalkingHash = Animator.StringToHash("isWalking");
@@ -61,7 +65,7 @@ public class EnemyYBotAI : MonoBehaviour
             }
         }
 
-       if (healthBar == null)
+        if (healthBar == null)
         {
             healthBar = FindObjectOfType<floatingHealthBar>();
         }
@@ -185,10 +189,28 @@ public class EnemyYBotAI : MonoBehaviour
             AudioManager.Instance.Play(AudioManager.SoundType.EnemySmall_Attack_light);
             Debug.Log("Played attack sound");
             yield return new WaitForSeconds(2.7f);
-        }}
+        }
+    }
 
     IEnumerator Die()
     {
+        // 🔒 Schutz: Tod darf nur einmal passieren
+        if (isDead) yield break;
+        isDead = true;
+
+        // 🔥 HIER – Boss stoppt den Timer
+        if (isBoss && TimeTrialManager.Instance != null)
+        {
+            if (TimeTrialManager.Instance.IsRunning)
+            {
+                TimeTrialManager.Instance.StopTimer();
+            }
+            else
+            {
+                Debug.LogWarning(
+                    "Boss wurde getötet, aber der Timer lief nicht.");
+            }
+        }
 
         if (healthBar != null)
         {
