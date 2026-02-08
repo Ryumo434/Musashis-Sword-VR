@@ -77,79 +77,133 @@ public class EnemyYBotAI : MonoBehaviour
     void Update()
     {
         if (isDead) return;
+        if (!ValidatePlayer()) return;
+
+        float distance = GetDistanceToPlayer();
+
+        HandlePlayerAttackInput(distance);
+        HandleDeathCheck();
+
+        if (isDead) return;
+
+        HandleStateByDistance(distance);
+    }
+
+    private bool ValidatePlayer()
+    {
         if (player == null)
         {
             Debug.LogError("Player reference not set on Enemy!");
-            return;
+            return false;
         }
+        return true;
+    }
 
-        float distance = Vector3.Distance(transform.position, player.position);
+    private float GetDistanceToPlayer()
+    {
+        return Vector3.Distance(transform.position, player.position);
+    }
 
-        if ((attackAction.action != null && attackAction.action.WasPerformedThisFrame() || Input.GetMouseButtonDown(1))
-            && distance <= playerAttackRange)
+    private void HandlePlayerAttackInput(float distance)
+    {
+        bool attackInput =
+            (attackAction.action != null && attackAction.action.WasPerformedThisFrame()) ||
+            Input.GetMouseButtonDown(1);
+
+        if (attackInput && distance <= playerAttackRange)
         {
             TakeDamage(1);
             AudioManager.Instance.Play(AudioManager.SoundType.EnemyMiddle_Damage_medium);
         }
+    }
 
+    private void HandleDeathCheck()
+    {
         if (health <= 0 && !isDead)
         {
             StartCoroutine(Die());
-            return;
         }
+    }
 
+    private void HandleStateByDistance(float distance)
+    {
         if (distance <= enemyAttackRange)
         {
-            if (currentState != EnemyState.Attacking)
-            {
-                AudioManager.Instance.Stop(AudioManager.SoundType.Running);
-
-                currentState = EnemyState.Attacking;
-                agent.isStopped = true;
-                animator.SetBool(isWalkingHash, false);
-                animator.SetBool(isRunningHash, false);
-                animator.SetBool(isAttackingHash, true);
-                StartCoroutine(PlayAttackSoundDelayed(0.5f));
-                Debug.Log("Attacking!");
-            }
+            EnterAttackingState();
         }
         else if (distance <= detectionRange)
         {
-            if (currentState != EnemyState.Chasing)
-            {
-                AudioManager.Instance.Stop(AudioManager.SoundType.EnemySmall_Attack_light);
-
-                currentState = EnemyState.Chasing;
-                agent.isStopped = false;
-                animator.SetBool(isAttackingHash, false);
-                animator.SetBool(isWalkingHash, false);
-                animator.SetBool(isRunningHash, true);
-                AudioManager.Instance.PlayLoop(AudioManager.SoundType.Running);
-                Debug.Log("Player detected! Chasing...");
-            }
+            EnterChasingState();
             agent.SetDestination(player.position);
         }
         else
         {
-            if (currentState != EnemyState.Patrolling)
-            {
-                AudioManager.Instance.Stop(AudioManager.SoundType.Running);
-
-                currentState = EnemyState.Patrolling;
-                agent.isStopped = false;
-                animator.SetBool(isAttackingHash, false);
-                animator.SetBool(isRunningHash, false);
-                animator.SetBool(isWalkingHash, true);
-                Debug.Log("Player lost. Resuming patrol...");
-                Patrol();
-            }
-
-            if (!agent.pathPending && agent.remainingDistance <= agent.stoppingDistance && !isWaiting)
-            {
-                StartCoroutine(WaitAndPatrol());
-            }
+            EnterPatrollingState();
+            HandlePatrolWaiting();
         }
     }
+
+    private void EnterAttackingState()
+    {
+        if (currentState == EnemyState.Attacking) return;
+
+        AudioManager.Instance.Stop(AudioManager.SoundType.Running);
+
+        currentState = EnemyState.Attacking;
+        agent.isStopped = true;
+
+        animator.SetBool(isWalkingHash, false);
+        animator.SetBool(isRunningHash, false);
+        animator.SetBool(isAttackingHash, true);
+
+        StartCoroutine(PlayAttackSoundDelayed(0.5f));
+        Debug.Log("Attacking!");
+    }
+
+    private void EnterChasingState()
+    {
+        if (currentState == EnemyState.Chasing) return;
+
+        AudioManager.Instance.Stop(AudioManager.SoundType.EnemySmall_Attack_light);
+
+        currentState = EnemyState.Chasing;
+        agent.isStopped = false;
+
+        animator.SetBool(isAttackingHash, false);
+        animator.SetBool(isWalkingHash, false);
+        animator.SetBool(isRunningHash, true);
+
+        AudioManager.Instance.PlayLoop(AudioManager.SoundType.Running);
+        Debug.Log("Player detected! Chasing...");
+    }
+
+    private void EnterPatrollingState()
+    {
+        if (currentState == EnemyState.Patrolling) return;
+
+        AudioManager.Instance.Stop(AudioManager.SoundType.Running);
+
+        currentState = EnemyState.Patrolling;
+        agent.isStopped = false;
+
+        animator.SetBool(isAttackingHash, false);
+        animator.SetBool(isRunningHash, false);
+        animator.SetBool(isWalkingHash, true);
+
+        Debug.Log("Player lost. Resuming patrol...");
+        Patrol();
+    }
+
+    private void HandlePatrolWaiting()
+    {
+        if (!agent.pathPending &&
+            agent.remainingDistance <= agent.stoppingDistance &&
+            !isWaiting)
+        {
+            StartCoroutine(WaitAndPatrol());
+        }
+    }
+
 
     void Patrol()
     {
