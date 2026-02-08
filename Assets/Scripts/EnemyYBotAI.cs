@@ -5,6 +5,8 @@ using UnityEngine.InputSystem;
 
 public class EnemyYBotAI : MonoBehaviour
 {
+    private enum EnemyState { Patrolling, Chasing, Attacking, Dying }
+
     [Header("References")]
     public Transform player;
     private Animator animator;
@@ -24,7 +26,7 @@ public class EnemyYBotAI : MonoBehaviour
     [SerializeField] private float maxHealth = 10f;
     private float health;
 
-    private string currentState = "Patrolling";
+    private EnemyState currentState = EnemyState.Patrolling;
     private bool isWaiting = false;
     private bool isDead = false;
 
@@ -42,7 +44,6 @@ public class EnemyYBotAI : MonoBehaviour
 
         isBoss = GetComponent<BossEnemy>() != null;
 
-        // Animator parameter IDs
         isWalkingHash = Animator.StringToHash("isWalking");
         isAttackingHash = Animator.StringToHash("isAttacking");
         isDyingHash = Animator.StringToHash("isDying");
@@ -84,8 +85,8 @@ public class EnemyYBotAI : MonoBehaviour
 
         float distance = Vector3.Distance(transform.position, player.position);
 
-        // Damage input test (Player attacking Enemy)
-        if ((attackAction.action != null && attackAction.action.WasPerformedThisFrame() || Input.GetMouseButtonDown(1)) && distance <= playerAttackRange)
+        if ((attackAction.action != null && attackAction.action.WasPerformedThisFrame() || Input.GetMouseButtonDown(1))
+            && distance <= playerAttackRange)
         {
             TakeDamage(1);
             AudioManager.Instance.Play(AudioManager.SoundType.EnemyMiddle_Damage_medium);
@@ -97,14 +98,13 @@ public class EnemyYBotAI : MonoBehaviour
             return;
         }
 
-        // --- Player detection logic ---
         if (distance <= enemyAttackRange)
         {
-            if (currentState != "Attacking")
+            if (currentState != EnemyState.Attacking)
             {
                 AudioManager.Instance.Stop(AudioManager.SoundType.Running);
 
-                currentState = "Attacking";
+                currentState = EnemyState.Attacking;
                 agent.isStopped = true;
                 animator.SetBool(isWalkingHash, false);
                 animator.SetBool(isRunningHash, false);
@@ -115,11 +115,11 @@ public class EnemyYBotAI : MonoBehaviour
         }
         else if (distance <= detectionRange)
         {
-            if (currentState != "Chasing")
+            if (currentState != EnemyState.Chasing)
             {
                 AudioManager.Instance.Stop(AudioManager.SoundType.EnemySmall_Attack_light);
 
-                currentState = "Chasing";
+                currentState = EnemyState.Chasing;
                 agent.isStopped = false;
                 animator.SetBool(isAttackingHash, false);
                 animator.SetBool(isWalkingHash, false);
@@ -131,11 +131,11 @@ public class EnemyYBotAI : MonoBehaviour
         }
         else
         {
-            if (currentState != "Patrolling")
+            if (currentState != EnemyState.Patrolling)
             {
                 AudioManager.Instance.Stop(AudioManager.SoundType.Running);
 
-                currentState = "Patrolling";
+                currentState = EnemyState.Patrolling;
                 agent.isStopped = false;
                 animator.SetBool(isAttackingHash, false);
                 animator.SetBool(isRunningHash, false);
@@ -180,11 +180,10 @@ public class EnemyYBotAI : MonoBehaviour
     }
 
     IEnumerator PlayAttackSoundDelayed(float delay)
-    // Plays attack sound after a delay to sync with animation
     {
         yield return new WaitForSeconds(delay);
 
-        while (currentState == "Attacking")
+        while (currentState == EnemyState.Attacking)
         {
             AudioManager.Instance.Play(AudioManager.SoundType.EnemySmall_Attack_light);
             Debug.Log("Played attack sound");
@@ -194,21 +193,14 @@ public class EnemyYBotAI : MonoBehaviour
 
     IEnumerator Die()
     {
-        // 🔒 Schutz: Tod darf nur einmal passieren
         if (isDead) yield break;
         isDead = true;
 
-        // 🔥 HIER – Boss stoppt den Timer
         if (isBoss && TimeTrialManager.Instance != null)
         {
             if (TimeTrialManager.Instance.IsRunning)
             {
                 TimeTrialManager.Instance.StopTimer();
-            }
-            else
-            {
-                Debug.LogWarning(
-                    "Boss wurde getötet, aber der Timer lief nicht.");
             }
         }
 
@@ -220,15 +212,13 @@ public class EnemyYBotAI : MonoBehaviour
         AudioManager.Instance.Stop(AudioManager.SoundType.EnemySmall_Attack_light);
         AudioManager.Instance.Play(AudioManager.SoundType.EnemyMiddle_Die_medium);
 
-        isDead = true;
-        currentState = "Dying";
+        currentState = EnemyState.Dying;
         agent.isStopped = true;
         animator.SetBool(isWalkingHash, false);
         animator.SetBool(isAttackingHash, false);
         animator.SetBool(isDyingHash, true);
         Debug.Log(gameObject.name + " is dying...");
 
-        // Warten bis die Death-Animation abgespielt ist
         yield return new WaitUntil(() => animator.GetCurrentAnimatorStateInfo(0).IsName("Dying"));
         yield return new WaitForSeconds(animator.GetCurrentAnimatorStateInfo(0).length);
 
