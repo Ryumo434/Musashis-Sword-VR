@@ -4,47 +4,88 @@ using TMPro;
 [RequireComponent(typeof(Animator))]
 public class DoorOpenOnPress : MonoBehaviour
 {
-    [SerializeField] private EnemySpawner spawner;
-    [SerializeField] private TextMeshPro text;
-    Animator anim;
+    [Header("References")]
+    [SerializeField] private EnemySpawner spawner;   // muss gesetzt werden
+    [SerializeField] private TextMeshPro text;       // muss gesetzt werden
+
+    [Header("Door")]
+    [SerializeField] private string openTriggerName = "OpenDoor";
+
+    [Header("UI")]
+    [SerializeField] private float feedbackSeconds = 2.0f; // wie lange Granted/Denied stehen bleibt
+    [SerializeField] private bool showIdleCounter = true;
+
+    private Animator anim;
+    private bool opened = false;
+    private float feedbackUntilTime = 0f;
 
     void Awake()
     {
         anim = GetComponent<Animator>();
     }
 
-    public void Open()
-    {
-        if (spawner.CurrentAlive < 0)
-        {
-            anim.SetTrigger("OpenDoor");
-            text.color = Color.green;
-            text.text = "Access Granted!";
-        } else
-        {
-            text.color = Color.red;
-            GetComponent<TextFlash>().ShowTemporaryMessage("Access Denied!", 3f);
-        }
-    }
-
     void OnEnable()
     {
-        if (spawner != null)
+        if (spawner == null)
         {
-            // Initial auslesen
-            UpdateUI(spawner.CurrentAlive);
-            // Live-Updates
-            spawner.OnAliveChanged += UpdateUI;
+            Debug.LogError($"{name}: Spawner reference missing!", this);
+            return;
         }
+
+        spawner.OnAliveChanged += UpdateUI;
+
+        UpdateUI(spawner.CurrentAlive);
     }
+
     void OnDisable()
     {
-        if (spawner != null) spawner.OnAliveChanged -= UpdateUI;
+        if (spawner != null)
+            spawner.OnAliveChanged -= UpdateUI;
+    }
+
+    public void Open()
+    {
+        if (spawner == null || text == null)
+        {
+            Debug.LogError($"{name}: Missing references (spawner/text).", this);
+            return;
+        }
+
+        if (opened)
+        {
+            return;
+        }
+
+        int alive = spawner.CurrentAlive;
+
+        if (alive <= 0)
+        {
+            opened = true;
+
+            anim.ResetTrigger(openTriggerName);
+            anim.SetTrigger(openTriggerName);
+
+            text.color = Color.green;
+            text.text = "Access Granted!";
+            feedbackUntilTime = Time.time + feedbackSeconds;
+        }
+        else
+        {
+            text.color = Color.red;
+            text.text = $"Access Denied! ({alive} alive)";
+            feedbackUntilTime = Time.time + feedbackSeconds;
+        }
     }
 
     void UpdateUI(int alive)
     {
+        if (Time.time < feedbackUntilTime) return;
+
+        if (!showIdleCounter) return;
+
+        if (text == null) return;
+
         text.color = Color.white;
-        text.text = $"Current Enemies: {alive}";
+        text.text = $"Enemies alive: {alive}";
     }
 }
