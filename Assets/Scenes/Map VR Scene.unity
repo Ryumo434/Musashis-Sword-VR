@@ -26433,9 +26433,9 @@ GameObject:
   - component: {fileID: 1651302541}
   - component: {fileID: 1651302540}
   - component: {fileID: 1651302545}
+  - component: {fileID: 1651302546}
   - component: {fileID: 1651302544}
   - component: {fileID: 1651302543}
-  - component: {fileID: 1651302546}
   - component: {fileID: 1651302547}
   - component: {fileID: 1651302548}
   m_Layer: 0
