@@ -6,6 +6,7 @@ TagManager:
   tags:
   - Left Hand
   - Right Hand
+  - EnemyHitbox
   layers:
   - Default
   - TransparentFX

@@ -6,6 +6,8 @@ public class SwordDamage : MonoBehaviour
     [SerializeField] private float damage = 25f;
     [SerializeField] private float minVelocityForDamage = 1.5f;
 
+    [SerializeField] private AudioSource hitAudio;
+
     private HashSet<EnemyHealth> alreadyHitEnemies = new HashSet<EnemyHealth>();
 
     private Vector3 lastPosition;
@@ -36,6 +38,8 @@ public class SwordDamage : MonoBehaviour
         {
             enemy.TakeDamage(damage);
             alreadyHitEnemies.Add(enemy);
+
+            hitAudio.Play(); // Laser Treffer Sound
 
             Debug.Log("Gegner getroffen: " + other.name + " | Velocity: " + currentVelocity);
         }
