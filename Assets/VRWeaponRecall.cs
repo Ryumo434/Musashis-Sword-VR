@@ -110,12 +110,15 @@ public class VRWeaponRecallSimple : MonoBehaviour
 
         if (isGripStillHeld)
         {
-            activeInteractor.interactionManager.SelectEnter(activeInteractor, grab);
-            Debug.Log("?? Manuelles Greifen (Grip aktiv)");
+            activeInteractor.interactionManager.SelectEnter(
+                activeInteractor as IXRSelectInteractor,
+                grab as IXRSelectInteractable
+            );
+            Debug.Log("Manuelles Greifen (Grip aktiv)");
         }
         else
         {
-            Debug.Log("?? Kein Grip mehr ? nicht greifen");
+            Debug.Log("Kein Grip mehr -> nicht greifen");
         }
     }
 }
