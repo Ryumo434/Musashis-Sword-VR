@@ -23,16 +23,23 @@ public struct EnemyConfig
 
 public class EnemySpawner : MonoBehaviour
 {
-    [Header("Prefab & Spawn")]
-    public GameObject enemyPrefab;
-    public Transform spawnPoint;            
+    [Header("Spawn Setup")]
+    [Tooltip("Mindestens 1, typischerweise 2 bis 3 Prefabs. Daraus wird zufällig gewählt.")]
+    public List<GameObject> enemyPrefabs = new List<GameObject>();
+
+    public Transform spawnPoint;
     public float intervalSeconds = 15f;
     public float firstDelay = 0f;
-    public int maxAlive = -1;                    // -1 = unbegrenzt
+
+    [Tooltip("-1 = unbegrenzt gleichzeitig aktiv")]
+    public int maxAlive = -1;
+
+    [Tooltip("Wie viele Gegner dieser Spawner insgesamt im ganzen Spiel erzeugen darf.")]
     public int maxTotalEnemies = 15;
-    public int CurrentAlive => alive.Count;
-    public event System.Action<int> OnAliveChanged;
-    
+
+    [Header("Room / Group")]
+    [Tooltip("Logischer Raum-Tag. Alle Gegner dieses Spawners bekommen diesen Wert.")]
+    public string groupTag = "Room1";
 
     [Header("Enemy Parameters")]
     public EnemyConfig config = new EnemyConfig
@@ -46,93 +53,195 @@ public class EnemySpawner : MonoBehaviour
         maxHealth = 10f
     };
 
-    [Tooltip("Optional: überschreibt EnemyAI.player (z. B. HMD Transform). Wenn leer, nutzt der EnemyAI MainCamera.")]
+    [Tooltip("Optional: überschreibt EnemyAI.player.")]
     public Transform playerOverride;
 
-    [Tooltip("Optional: falls du das Angriffs-Input vom Spieler an den Enemy weiterleiten willst (dein Script hat ein privates Feld).")]
+    [Tooltip("Optional: falls du Angriffsinput weiterreichen willst.")]
     public InputActionProperty attackAction;
 
-    private readonly List<GameObject> alive = new();
+    public int CurrentAlive { get { return alive.Count; } }
+    public int SpawnedEnemies { get { return spawnedEnemies; } }
+    public int RemainingToSpawn { get { return Mathf.Max(0, maxTotalEnemies - spawnedEnemies); } }
+
+    public event System.Action<int> OnAliveChanged;
+
+    private readonly List<GameObject> alive = new List<GameObject>();
     private Coroutine loop;
+    private bool plannedSpawnsRegistered;
     private int spawnedEnemies;
 
-    void OnEnable() { loop = StartCoroutine(SpawnLoop()); }
-    void OnDisable() { if (loop != null) StopCoroutine(loop); loop = null; }
-
-    IEnumerator SpawnLoop()
+    private void OnEnable()
     {
-        if (firstDelay > 0f) yield return new WaitForSeconds(firstDelay);
-        var wait = new WaitForSeconds(intervalSeconds);
+        RegisterRemainingPlannedSpawns();
+        loop = StartCoroutine(SpawnLoop());
+    }
 
-        while (true)
+    private void OnDisable()
+    {
+        if (loop != null)
+            StopCoroutine(loop);
+
+        loop = null;
+
+        UnregisterRemainingPlannedSpawns();
+    }
+
+    private void RegisterRemainingPlannedSpawns()
+    {
+        if (plannedSpawnsRegistered)
+            return;
+
+        int remaining = RemainingToSpawn;
+        if (remaining > 0)
         {
-            if (enemyPrefab == null)
+            EnemyGroupRegistry.AddPlannedSpawns(groupTag, remaining);
+            plannedSpawnsRegistered = true;
+        }
+    }
+
+    private void UnregisterRemainingPlannedSpawns()
+    {
+        if (!plannedSpawnsRegistered)
+            return;
+
+        int remaining = RemainingToSpawn;
+        if (remaining > 0)
+            EnemyGroupRegistry.RemovePlannedSpawns(groupTag, remaining);
+
+        plannedSpawnsRegistered = false;
+    }
+
+    private IEnumerator SpawnLoop()
+    {
+        if (firstDelay > 0f)
+            yield return new WaitForSeconds(firstDelay);
+
+        WaitForSeconds wait = new WaitForSeconds(intervalSeconds);
+
+        while (spawnedEnemies < maxTotalEnemies)
+        {
+            if (!HasValidPrefab())
             {
-                Debug.LogError("EnemySpawner: enemyPrefab nicht gesetzt!");
+                Debug.LogError(name + ": EnemySpawner hat keine gültigen enemyPrefabs gesetzt!", this);
                 yield break;
             }
 
-            if ((maxAlive < 0 || alive.Count < maxAlive) && spawnedEnemies < maxTotalEnemies)
+            if (maxAlive < 0 || alive.Count < maxAlive)
                 SpawnOne();
 
             yield return wait;
         }
     }
 
+    private bool HasValidPrefab()
+    {
+        if (enemyPrefabs == null || enemyPrefabs.Count == 0)
+            return false;
+
+        foreach (GameObject prefab in enemyPrefabs)
+        {
+            if (prefab != null)
+                return true;
+        }
+
+        return false;
+    }
+
+    private GameObject GetRandomPrefab()
+    {
+        List<GameObject> valid = new List<GameObject>();
+
+        foreach (GameObject prefab in enemyPrefabs)
+        {
+            if (prefab != null)
+                valid.Add(prefab);
+        }
+
+        if (valid.Count == 0)
+            return null;
+
+        int index = Random.Range(0, valid.Count);
+        return valid[index];
+    }
+
     public GameObject SpawnOne()
     {
+        if (spawnedEnemies >= maxTotalEnemies)
+            return null;
+
+        GameObject selectedPrefab = GetRandomPrefab();
+        if (selectedPrefab == null)
+        {
+            Debug.LogError(name + ": Kein gültiges Enemy Prefab gefunden.", this);
+            return null;
+        }
+
         Vector3 pos = spawnPoint ? spawnPoint.position : transform.position;
         Quaternion rot = spawnPoint ? spawnPoint.rotation : transform.rotation;
 
-        // Optional: auf NavMesh einrasten
-        if (NavMesh.SamplePosition(pos, out var hit, 2f, NavMesh.AllAreas))
+        NavMeshHit hit;
+        if (NavMesh.SamplePosition(pos, out hit, 2f, NavMesh.AllAreas))
             pos = hit.position;
 
-        var go = Instantiate(enemyPrefab, pos, rot);
+        GameObject go = Instantiate(selectedPrefab, pos, rot);
+
         alive.Add(go);
         spawnedEnemies++;
-        go.AddComponent<DespawnTracker>().Init(() =>
+
+        EnemyGroupRegistry.ConsumePlannedSpawn(groupTag, 1);
+
+        DespawnTracker despawnTracker = go.GetComponent<DespawnTracker>();
+        if (despawnTracker == null)
+            despawnTracker = go.AddComponent<DespawnTracker>();
+
+        despawnTracker.Init(() =>
         {
             alive.Remove(go);
-            OnAliveChanged?.Invoke(alive.Count);
+            if (OnAliveChanged != null)
+                OnAliveChanged(alive.Count);
         });
 
-        OnAliveChanged?.Invoke(alive.Count);
+        EnemyGroupMember groupMember = go.GetComponent<EnemyGroupMember>();
+        if (groupMember == null)
+            groupMember = go.AddComponent<EnemyGroupMember>();
 
-        // --- Parameter setzen ---
-        var ai = go.GetComponent<EnemyAI>();
-        if (ai != null)
-        {
-            // Player-Ziel
-            if (playerOverride) ai.player = playerOverride;
+        groupMember.InitializeAtRuntime(groupTag);
 
-            // Basis-Parameter (vor Start() gesetzt → werden in Start() genutzt)
-            ai.detectionRange = config.detectionRange;
-            ai.enemyAttackRange = config.enemyAttackRange;
-            ai.playerAttackRange = config.playerAttackRange;
-            ai.moveSpeed = config.moveSpeed;
-            ai.patrolRange = config.patrolRange;
-            ai.waitTime = config.waitTime;
-            ai.maxHealth = config.maxHealth;
-            ai.health = config.maxHealth; // falls du direkt voll starten willst
+        if (OnAliveChanged != null)
+            OnAliveChanged(alive.Count);
 
-            // NavMeshAgent Speed synchron halten
-            var agent = go.GetComponent<NavMeshAgent>();
-            if (agent) agent.speed = config.moveSpeed;
-
-            // Optional: dein privates Feld via Helper (siehe Teil 2)
-            //if (attackAction.action != null)
-            //    ai.SetAttackAction(attackAction);
-        }
-        else
-        {
-            Debug.LogWarning("EnemySpawner: Prefab hat kein EnemyAI.");
-        }
+        ApplyEnemyParameters(go);
 
         return go;
     }
 
-    void OnDrawGizmos()
+    private void ApplyEnemyParameters(GameObject go)
+    {
+        EnemyAI ai = go.GetComponent<EnemyAI>();
+        if (ai == null)
+        {
+            Debug.LogWarning(name + ": Prefab '" + go.name + "' hat kein EnemyAI.", go);
+            return;
+        }
+
+        if (playerOverride != null)
+            ai.player = playerOverride;
+
+        ai.detectionRange = config.detectionRange;
+        ai.enemyAttackRange = config.enemyAttackRange;
+        ai.playerAttackRange = config.playerAttackRange;
+        ai.moveSpeed = config.moveSpeed;
+        ai.patrolRange = config.patrolRange;
+        ai.waitTime = config.waitTime;
+        ai.maxHealth = config.maxHealth;
+        ai.health = config.maxHealth;
+
+        NavMeshAgent agent = go.GetComponent<NavMeshAgent>();
+        if (agent != null)
+            agent.speed = config.moveSpeed;
+    }
+
+    private void OnDrawGizmos()
     {
         Vector3 pos = spawnPoint ? spawnPoint.position : transform.position;
         Gizmos.DrawWireSphere(pos, 0.25f);
@@ -141,7 +250,16 @@ public class EnemySpawner : MonoBehaviour
     private class DespawnTracker : MonoBehaviour
     {
         private System.Action onDestroyed;
-        public void Init(System.Action cb) => onDestroyed = cb;
-        void OnDestroy() => onDestroyed?.Invoke();
+
+        public void Init(System.Action callback)
+        {
+            onDestroyed = callback;
+        }
+
+        private void OnDestroy()
+        {
+            if (onDestroyed != null)
+                onDestroyed();
+        }
     }
 }
