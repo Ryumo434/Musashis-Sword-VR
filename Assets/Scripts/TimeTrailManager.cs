@@ -13,7 +13,6 @@ public class TimeTrialManager : MonoBehaviour
     private bool isRunning = false;
     public bool IsRunning => isRunning;
 
-
     private void Awake()
     {
         if (Instance != null && Instance != this)
@@ -24,14 +23,13 @@ public class TimeTrialManager : MonoBehaviour
         Instance = this;
     }
 
+    private void Start()
+    {
+        StartTimer();
+    }
+
     private void Update()
     {
-        // Provisorischer Start
-        if (!isRunning && Input.GetKeyDown(KeyCode.F1))
-        {
-            StartTimer();
-        }
-
         if (isRunning)
         {
             elapsedTime = Time.time - startTime;
