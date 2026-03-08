@@ -553,10 +553,12 @@ MonoBehaviour:
   detectionRange: 10
   enemyAttackRange: 2
   playerAttackRange: 1.8
-  moveSpeed: 1
+  moveSpeed: 2
   patrolRange: 5
   waitTime: 2
   maxHealth: 10
+  chaseDuration: 3
+  chasePause: 2
 --- !u!195 &4988627790921416751
 NavMeshAgent:
   m_ObjectHideFlags: 0

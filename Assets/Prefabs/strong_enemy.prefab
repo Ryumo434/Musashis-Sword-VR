@@ -541,7 +541,9 @@ MonoBehaviour:
   moveSpeed: 1
   patrolRange: 5
   waitTime: 2
-  maxHealth: 10
+  maxHealth: 15
+  chaseDuration: 3
+  chasePause: 2
 --- !u!195 &2179681784879151289
 NavMeshAgent:
   m_ObjectHideFlags: 0

@@ -455,7 +455,7 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: 61876e88776480a41a2b22434c3527b6,
         type: 3}
       propertyPath: m_Name
-      value: Mutant@Mutant Idle
+      value: boss
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: 61876e88776480a41a2b22434c3527b6,
         type: 3}
@@ -550,13 +550,15 @@ MonoBehaviour:
       m_SingletonActionBindings: []
       m_Flags: 0
     m_Reference: {fileID: 0}
-  detectionRange: 5
+  detectionRange: 20
   enemyAttackRange: 2
   playerAttackRange: 1.8
   moveSpeed: 1
   patrolRange: 5
-  waitTime: 2
+  waitTime: 4
   maxHealth: 30
+  chaseDuration: 3
+  chasePause: 3
 --- !u!195 &65695054486460753
 NavMeshAgent:
   m_ObjectHideFlags: 0

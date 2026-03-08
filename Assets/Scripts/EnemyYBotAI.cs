@@ -24,6 +24,13 @@ public class EnemyYBotAI : MonoBehaviour
     [SerializeField] private float patrolRange = 5f;
     [SerializeField] private float waitTime = 2f;
     [SerializeField] private float maxHealth = 10f;
+
+    [Header("Chase Pause")]
+    [SerializeField] private float chaseDuration = 3f;
+    [SerializeField] private float chasePause = 2f;
+
+    private float chaseTimer = 0f;
+    private bool isChasePaused = false;
     private float health;
 
     private EnemyState currentState = EnemyState.Patrolling;
@@ -134,7 +141,7 @@ public class EnemyYBotAI : MonoBehaviour
         else if (distance <= detectionRange)
         {
             EnterChasingState();
-            agent.SetDestination(player.position);
+            HandleChaseBehaviour();
         }
         else
         {
@@ -177,8 +184,50 @@ public class EnemyYBotAI : MonoBehaviour
         Debug.Log("Player detected! Chasing...");
     }
 
+    private void HandleChaseBehaviour()
+    {
+        if (isChasePaused) return;
+
+        chaseTimer += Time.deltaTime;
+
+        agent.SetDestination(player.position);
+
+        if (chaseTimer >= chaseDuration)
+        {
+            StartCoroutine(ChasePause());
+        }
+    }
+
+    IEnumerator ChasePause()
+    {
+        isChasePaused = true;
+        chaseTimer = 0f;
+
+        agent.isStopped = true;
+
+        animator.SetBool(isRunningHash, false);
+        animator.SetBool(isWalkingHash, false);
+
+        yield return new WaitForSeconds(chasePause);
+
+        if (currentState != EnemyState.Chasing)
+        {
+            isChasePaused = false;
+            yield break;
+        }
+
+        agent.isStopped = false;
+
+        animator.SetBool(isRunningHash, true);
+
+        isChasePaused = false;
+    }
+
     private void EnterPatrollingState()
     {
+        chaseTimer = 0f;
+        isChasePaused = false;
+
         if (currentState == EnemyState.Patrolling) return;
 
         AudioManager.Instance.Stop(AudioManager.SoundType.Running);
