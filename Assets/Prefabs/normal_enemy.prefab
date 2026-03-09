@@ -699,7 +699,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   player: {fileID: 0}
-  healthBar: {fileID: 0}
+  healthSlider: {fileID: 2784233429000385562}
   attackAction:
     m_UseReference: 0
     m_Action:
@@ -718,9 +718,10 @@ MonoBehaviour:
   moveSpeed: 1
   patrolRange: 5
   waitTime: 2
-  maxHealth: 10
+  maxHealth: 100
   chaseDuration: 3
   chasePause: 2
+  currentHealth: 0
 --- !u!136 &6026601548631777306
 CapsuleCollider:
   m_ObjectHideFlags: 0

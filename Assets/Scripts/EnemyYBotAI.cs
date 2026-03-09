@@ -1,6 +1,7 @@
 using System.Collections;
 using UnityEngine;
 using UnityEngine.AI;
+using UnityEngine.UI;
 using UnityEngine.InputSystem;
 
 public class EnemyYBotAI : MonoBehaviour
@@ -13,7 +14,8 @@ public class EnemyYBotAI : MonoBehaviour
     private NavMeshAgent agent;
     private bool isBoss;
 
-    [SerializeField] private floatingHealthBar healthBar;
+    //[SerializeField] private floatingHealthBar healthBar;
+    [SerializeField] private Slider healthSlider;
     [SerializeField] private InputActionProperty attackAction;
 
     [Header("Stats")]
@@ -31,8 +33,8 @@ public class EnemyYBotAI : MonoBehaviour
 
     private float chaseTimer = 0f;
     private bool isChasePaused = false;
-    private float health;
-
+    //private float health;
+    [SerializeField] private float currentHealth;
     private EnemyState currentState = EnemyState.Patrolling;
     private bool isWaiting = false;
     private bool isDead = false;
@@ -47,7 +49,7 @@ public class EnemyYBotAI : MonoBehaviour
     {
         agent = GetComponent<NavMeshAgent>();
         animator = GetComponent<Animator>();
-        healthBar = GetComponentInChildren<floatingHealthBar>();
+        //healthBar = GetComponentInChildren<floatingHealthBar>();
 
         isBoss = GetComponent<BossEnemy>() != null;
 
@@ -59,9 +61,13 @@ public class EnemyYBotAI : MonoBehaviour
 
     void Start()
     {
-        health = maxHealth;
+
+        currentHealth = maxHealth;
+        UpdateHealthUI();
+
+        //health = maxHealth;
         agent.speed = moveSpeed;
-        healthBar.UpdateHealthBar(health, maxHealth);
+        //healthBar.UpdateHealthBar(health, maxHealth);
 
         if (player == null)
         {
@@ -72,12 +78,12 @@ public class EnemyYBotAI : MonoBehaviour
                 Debug.Log("Player set to Main Camera: " + player.name);
             }
         }
-
+        /*
         if (healthBar == null)
         {
             healthBar = FindObjectOfType<floatingHealthBar>();
         }
-
+        */
         Patrol();
     }
 
@@ -110,7 +116,7 @@ public class EnemyYBotAI : MonoBehaviour
     {
         return Vector3.Distance(transform.position, player.position);
     }
-
+    
     private void HandlePlayerAttackInput(float distance)
     {
         bool attackInput =
@@ -126,7 +132,7 @@ public class EnemyYBotAI : MonoBehaviour
 
     private void HandleDeathCheck()
     {
-        if (health <= 0 && !isDead)
+        if (currentHealth <= 0 && !isDead)
         {
             StartCoroutine(Die());
         }
@@ -274,12 +280,30 @@ public class EnemyYBotAI : MonoBehaviour
         isWaiting = false;
     }
 
+    /*
     public void TakeDamage(int damage)
     {
         if (isDead) return;
         health -= damage;
         healthBar.UpdateHealthBar(health, maxHealth);
         Debug.Log(gameObject.name + " took damage! Health: " + health);
+    }
+    */
+
+    public void TakeDamage(float damage)
+    {
+        if (isDead) return;
+        Debug.Log(gameObject.name + " takes damage: " + damage);
+        currentHealth -= damage;
+        currentHealth = Mathf.Clamp(currentHealth, 0f, maxHealth);
+
+        UpdateHealthUI();
+
+        if (currentHealth <= 0f)
+        {
+
+            StartCoroutine(Die());
+        }
     }
 
     IEnumerator PlayAttackSoundDelayed(float delay)
@@ -307,9 +331,9 @@ public class EnemyYBotAI : MonoBehaviour
             }
         }
 
-        if (healthBar != null)
+        if (healthSlider != null)
         {
-            Destroy(healthBar.gameObject);
+            Destroy(healthSlider.gameObject);
         }
 
         AudioManager.Instance.Stop(AudioManager.SoundType.EnemySmall_Attack_light);
@@ -332,5 +356,14 @@ public class EnemyYBotAI : MonoBehaviour
     public float GetMaxHealth()
     {
         return maxHealth;
+    }
+
+    private void UpdateHealthUI()
+    {
+        if (healthSlider != null)
+        {
+            healthSlider.maxValue = maxHealth;
+            healthSlider.value = currentHealth;
+        }
     }
 }

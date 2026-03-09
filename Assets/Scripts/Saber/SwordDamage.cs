@@ -8,7 +8,7 @@ public class SwordDamage : MonoBehaviour
 
     [SerializeField] private AudioSource hitAudio;
 
-    private HashSet<EnemyHealth> alreadyHitEnemies = new HashSet<EnemyHealth>();
+    private HashSet<EnemyYBotAI> alreadyHitEnemies = new HashSet<EnemyYBotAI>();
 
     private Vector3 lastPosition;
     private float currentVelocity;
@@ -32,7 +32,7 @@ public class SwordDamage : MonoBehaviour
         if (currentVelocity < minVelocityForDamage)
             return;
 
-        EnemyHealth enemy = other.GetComponentInParent<EnemyHealth>();
+        EnemyYBotAI enemy = other.GetComponentInParent<EnemyYBotAI>();
 
         if (enemy != null && !alreadyHitEnemies.Contains(enemy))
         {
@@ -50,7 +50,7 @@ public class SwordDamage : MonoBehaviour
         if (!other.CompareTag("EnemyHitbox"))
             return;
 
-        EnemyHealth enemy = other.GetComponentInParent<EnemyHealth>();
+        EnemyYBotAI enemy = other.GetComponentInParent<EnemyYBotAI>();
 
         if (enemy != null)
         {
