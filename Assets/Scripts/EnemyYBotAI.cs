@@ -49,6 +49,13 @@ public class EnemyYBotAI : MonoBehaviour
     {
         agent = GetComponent<NavMeshAgent>();
         animator = GetComponent<Animator>();
+
+        healthSlider = GetComponentInChildren<Slider>();
+
+        if (healthSlider == null)
+        {
+            Debug.LogError("Health Slider not found in children of " + gameObject.name);
+        }
         //healthBar = GetComponentInChildren<floatingHealthBar>();
 
         isBoss = GetComponent<BossEnemy>() != null;
@@ -322,6 +329,14 @@ public class EnemyYBotAI : MonoBehaviour
     {
         if (isDead) yield break;
         isDead = true;
+
+
+
+        Debug.Log("Die() gestartet");
+        Debug.Log("animator: " + animator);
+        Debug.Log("agent: " + agent);
+        Debug.Log("AudioManager.Instance: " + AudioManager.Instance);
+        Debug.Log("healthSlider: " + healthSlider);
 
         if (isBoss && TimeTrialManager.Instance != null)
         {
