@@ -3,15 +3,19 @@ using UnityEngine.UI;
 
 public class EnemyHealth : MonoBehaviour
 {
-    [SerializeField] private float maxHealth = 100f;
+    //[SerializeField] private float maxHealth;
     [SerializeField] private float currentHealth;
-
     [SerializeField] private Slider healthSlider;
 
     private bool isDead = false;
+    private float maxHealth;
 
+    EnemyYBotAI enemyYBotAI;
     private void Start()
     {
+        enemyYBotAI = GetComponent<EnemyYBotAI>();
+
+        maxHealth = enemyYBotAI.GetMaxHealth();
         currentHealth = maxHealth;
         UpdateHealthUI();
     }

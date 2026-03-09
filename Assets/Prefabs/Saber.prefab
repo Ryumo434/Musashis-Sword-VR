@@ -5414,7 +5414,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9aa9d62652277cc4bacab57c7df89d3d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  damage: 0.01
+  damage: 5
   minVelocityForDamage: 3
   hitAudio: {fileID: 4083736582284015255}
 --- !u!1 &6211833413901301871

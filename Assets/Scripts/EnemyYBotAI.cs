@@ -23,7 +23,7 @@ public class EnemyYBotAI : MonoBehaviour
     [SerializeField] private float moveSpeed = 3f;
     [SerializeField] private float patrolRange = 5f;
     [SerializeField] private float waitTime = 2f;
-    [SerializeField] private float maxHealth = 10f;
+    [SerializeField] private float maxHealth;
 
     [Header("Chase Pause")]
     [SerializeField] private float chaseDuration = 3f;
@@ -327,5 +327,10 @@ public class EnemyYBotAI : MonoBehaviour
 
         Debug.Log(gameObject.name + " destroyed!");
         Destroy(gameObject);
+    }
+
+    public float GetMaxHealth()
+    {
+        return maxHealth;
     }
 }
