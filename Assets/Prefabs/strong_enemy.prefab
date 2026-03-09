@@ -496,6 +496,10 @@ PrefabInstance:
         type: 3}
       insertIndex: -1
       addedObject: {fileID: 4779110862470063223}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: cb261d67aada8b8409ac602af838ae7d,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 6837708376552903418}
   m_SourcePrefab: {fileID: 100100000, guid: cb261d67aada8b8409ac602af838ae7d, type: 3}
 --- !u!4 &536753435991310179 stripped
 Transform:
@@ -522,7 +526,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   player: {fileID: 0}
-  healthBar: {fileID: 0}
+  healthSlider: {fileID: 0}
   attackAction:
     m_UseReference: 0
     m_Action:
@@ -544,6 +548,7 @@ MonoBehaviour:
   maxHealth: 15
   chaseDuration: 3
   chasePause: 2
+  currentHealth: 0
 --- !u!195 &2179681784879151289
 NavMeshAgent:
   m_ObjectHideFlags: 0
@@ -603,3 +608,17 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   groupTag: 
   autoRegisterOnEnable: 1
+--- !u!114 &6837708376552903418
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 880804245447321049}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ec65ee18febb1d24ca2a93508894afed, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  currentHealth: 0
+  healthSlider: {fileID: 6063128645365479768}

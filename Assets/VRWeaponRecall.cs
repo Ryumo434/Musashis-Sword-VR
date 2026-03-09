@@ -3,78 +3,124 @@ using UnityEngine.XR.Interaction.Toolkit;
 
 public class VRWeaponRecallSimple : MonoBehaviour
 {
-    [Header("? Eingabe")]
+    [Header("Input")]
     public ActionBasedController rightControllerInput;
     public ActionBasedController leftControllerInput;
 
-    [Header("?? Ziel (AttachPoint an der Hand)")]
+    [Header("Hand Targets")]
     public XRBaseControllerInteractor rightHandTarget;
     public XRBaseControllerInteractor leftHandTarget;
 
-    [Header("? Einstellungen")]
+    [Header("Optional Climbing Wall Trigger")]
+    [Tooltip("Trigger-Collider der rechten oder allgemeinen Climbing Wall")]
+    public Collider climbingWallTrigger;
+
+    [Header("Settings")]
     public float recallSpeed = 10f;
 
     private Rigidbody rb;
+    private XRGrabInteractable grabInteractable;
+
     private bool isRecalling = false;
     private XRBaseControllerInteractor activeInteractor;
     private ActionBasedController activeInput;
 
-    void Start()
+    private void Start()
     {
         rb = GetComponent<Rigidbody>();
+        grabInteractable = GetComponent<XRGrabInteractable>();
 
         if (rb == null)
-            Debug.LogError("? Kein Rigidbody am Schwert!");
+            Debug.LogError("Kein Rigidbody am Schwert!", this);
+
+        if (grabInteractable == null)
+            Debug.LogError("Kein XRGrabInteractable am Schwert!", this);
+
         if (rightControllerInput == null || leftControllerInput == null)
-            Debug.LogError("? ActionBasedController für beide Hände müssen gesetzt sein!");
+            Debug.LogError("ActionBasedController f?r beide H?nde m?ssen gesetzt sein!", this);
+
         if (rightHandTarget == null || leftHandTarget == null)
-            Debug.LogError("? Beide Hand-Interactor müssen gesetzt sein!");
+            Debug.LogError("Beide Hand-Interactor m?ssen gesetzt sein!", this);
     }
 
-    void Update()
+    private void Update()
     {
-        // Prüfen: Wird Grip rechts oder links gedrückt?
-        bool rightGrip = rightControllerInput.selectAction.action.ReadValue<float>() > 0.5f;
-        bool leftGrip = leftControllerInput.selectAction.action.ReadValue<float>() > 0.5f;
+        bool rightGrip = rightControllerInput != null &&
+                         rightControllerInput.selectAction.action.ReadValue<float>() > 0.5f;
 
-        // Start Recall mit rechter oder linker Hand (aber nur wenn nicht bereits aktiv)
-        if (rightGrip && !isRecalling)
+        bool leftGrip = leftControllerInput != null &&
+                        leftControllerInput.selectAction.action.ReadValue<float>() > 0.5f;
+
+        bool rightHandInsideClimbTrigger = IsHandInsideClimbingWall(rightHandTarget);
+        bool leftHandInsideClimbTrigger = IsHandInsideClimbingWall(leftHandTarget);
+
+        // Recall nur starten, wenn die entsprechende Hand NICHT an der Kletterwand ist
+        if (rightGrip && !isRecalling && !rightHandInsideClimbTrigger)
         {
             activeInteractor = rightHandTarget;
             activeInput = rightControllerInput;
             StartRecall();
         }
-        else if (leftGrip && !isRecalling)
+        else if (leftGrip && !isRecalling && !leftHandInsideClimbTrigger)
         {
             activeInteractor = leftHandTarget;
             activeInput = leftControllerInput;
             StartRecall();
         }
 
-        // Wenn bereits gegriffen, dann Recall stoppen
-        if (isRecalling && GetComponent<XRGrabInteractable>().isSelected)
+        // Wenn bereits gegriffen, Recall abbrechen
+        if (isRecalling && grabInteractable != null && grabInteractable.isSelected)
         {
-            Debug.Log("?? Recall abgebrochen: Schwert wurde gegriffen");
+            Debug.Log("Recall abgebrochen: Schwert wurde gegriffen");
             isRecalling = false;
             rb.isKinematic = false;
             return;
         }
 
-        // Rückflug ausführen
         if (isRecalling)
         {
             FlyBackToHand();
         }
     }
 
-    void StartRecall()
+    private bool IsHandInsideClimbingWall(XRBaseControllerInteractor handInteractor)
+    {
+        if (handInteractor == null)
+            return false;
+
+        Transform handTransform = handInteractor.attachTransform != null
+            ? handInteractor.attachTransform
+            : handInteractor.transform;
+
+        Vector3 handPosition = handTransform.position;
+
+        return IsPointInsideTrigger(climbingWallTrigger, handPosition);
+    }
+
+    private bool IsPointInsideTrigger(Collider triggerCollider, Vector3 point)
+    {
+        if (triggerCollider == null)
+            return false;
+
+        if (!triggerCollider.isTrigger)
+        {
+            Debug.LogWarning($"{triggerCollider.name} ist kein Trigger-Collider.", triggerCollider);
+        }
+
+        Vector3 closestPoint = triggerCollider.ClosestPoint(point);
+
+        // Wenn der Punkt innerhalb des Colliders liegt, ist ClosestPoint praktisch derselbe Punkt
+        return Vector3.Distance(closestPoint, point) < 0.001f;
+    }
+
+    private void StartRecall()
     {
         isRecalling = true;
         rb.isKinematic = true;
         transform.SetParent(null);
     }
 
-    void FlyBackToHand()
+    private void FlyBackToHand()
     {
         Transform target = activeInteractor.attachTransform != null
             ? activeInteractor.attachTransform
@@ -83,8 +129,17 @@ public class VRWeaponRecallSimple : MonoBehaviour
         Vector3 targetPos = target.position;
         Quaternion targetRot = target.rotation;
 
-        transform.position = Vector3.MoveTowards(transform.position, targetPos, recallSpeed * Time.deltaTime);
-        transform.rotation = Quaternion.Slerp(transform.rotation, targetRot, Time.deltaTime * 10f);
+        transform.position = Vector3.MoveTowards(
+            transform.position,
+            targetPos,
+            recallSpeed * Time.deltaTime
+        );
+
+        transform.rotation = Quaternion.Slerp(
+            transform.rotation,
+            targetRot,
+            Time.deltaTime * 10f
+        );
 
         if (Vector3.Distance(transform.position, targetPos) < 0.1f)
         {
@@ -92,21 +147,25 @@ public class VRWeaponRecallSimple : MonoBehaviour
         }
     }
 
-    void FinishRecall()
+    private void FinishRecall()
     {
         isRecalling = false;
         rb.isKinematic = false;
 
         var grab = GetComponent<XRGrabInteractableTwoAttach>();
+        if (grab == null)
+        {
+            Debug.LogError("XRGrabInteractableTwoAttach fehlt am Schwert.", this);
+            return;
+        }
 
-        // AttachPoint passend zur Hand setzen
         if (activeInteractor.CompareTag("Left Hand"))
             grab.attachTransform = grab.leftAttachTransform;
         else if (activeInteractor.CompareTag("Right Hand"))
             grab.attachTransform = grab.rightAttachTransform;
 
-        // Nur greifen, wenn der Grip noch gehalten wird
-        bool isGripStillHeld = activeInput.selectAction.action.ReadValue<float>() > 0.5f;
+        bool isGripStillHeld = activeInput != null &&
+                               activeInput.selectAction.action.ReadValue<float>() > 0.5f;
 
         if (isGripStillHeld)
         {
@@ -114,6 +173,7 @@ public class VRWeaponRecallSimple : MonoBehaviour
                 activeInteractor as IXRSelectInteractor,
                 grab as IXRSelectInteractable
             );
+
             Debug.Log("Manuelles Greifen (Grip aktiv)");
         }
         else
