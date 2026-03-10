@@ -8,6 +8,11 @@ public class MainMenu : MonoBehaviour
         SceneManager.LoadScene("Map VR Scene");
     }
 
+    public void LaunchScene()
+    {
+        SceneManager.LoadScene("LaunchScene");
+    }
+
     public void CloseGame()
     {
         Debug.Log("Game closed");

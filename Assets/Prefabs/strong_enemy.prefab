@@ -543,16 +543,22 @@ MonoBehaviour:
       m_SingletonActionBindings: []
       m_Flags: 0
     m_Reference: {fileID: 0}
-  detectionRange: 10
+  detectionRange: 17
   enemyAttackRange: 2
   playerAttackRange: 1.8
   moveSpeed: 3
-  patrolRange: 5
+  patrolRange: 10
   waitTime: 2
   maxHealth: 15
   chaseDuration: 3
   chasePause: 2
+  enemyDamage: 10
+  attackCooldown: 1.5
   currentHealth: 0
+  doorToOpen: {fileID: 0}
+  spawnerToDisable: {fileID: 0}
+  activationTriggerObject: {fileID: 0}
+  freezeBossUntilTriggered: 1
 --- !u!195 &2179681784879151289
 NavMeshAgent:
   m_ObjectHideFlags: 0

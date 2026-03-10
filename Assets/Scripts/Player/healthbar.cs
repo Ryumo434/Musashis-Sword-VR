@@ -34,7 +34,7 @@ public class healthbar : MonoBehaviour
 
         if (Input.GetKeyDown(KeyCode.Space))
         {
-            PlayerTakeDamage(10f);
+            PlayerTakeDamage(3f);
         }
 
         if (easeHealthSlider.value != health)

@@ -6,7 +6,7 @@ using UnityEngine.InputSystem;
 
 public class EnemyYBotAI : MonoBehaviour
 {
-    private enum EnemyState { Patrolling, Chasing, Attacking, Dying }
+    private enum EnemyState { Frozen, Patrolling, Chasing, Attacking, Dying }
 
     [Header("References")]
     public Transform player;
@@ -33,6 +33,8 @@ public class EnemyYBotAI : MonoBehaviour
     [SerializeField] private float enemyDamage = 10f;
     [SerializeField] private float attackCooldown = 1.5f;
 
+    
+
     private float chaseTimer = 0f;
     private bool isChasePaused = false;
     //private float health;
@@ -49,6 +51,19 @@ public class EnemyYBotAI : MonoBehaviour
 
     private float lastAttackTime;
     private healthbar playerHealth;
+
+    [Header("Boss Death Actions")]
+    [SerializeField] private DoorOpenOnPress doorToOpen;
+    [SerializeField] private GameObject spawnerToDisable;
+
+    [Header("Boss Activation")]
+    [SerializeField] private GameObject activationTriggerObject;
+    [SerializeField] private bool freezeBossUntilTriggered = true;
+
+    private bool bossActivated = false;
+
+
+
 
     private void Awake()
     {
@@ -73,13 +88,10 @@ public class EnemyYBotAI : MonoBehaviour
 
     void Start()
     {
-
         currentHealth = maxHealth;
         UpdateHealthUI();
 
-        //health = maxHealth;
         agent.speed = moveSpeed;
-        //healthBar.UpdateHealthBar(health, maxHealth);
 
         if (player == null)
         {
@@ -90,18 +102,48 @@ public class EnemyYBotAI : MonoBehaviour
                 Debug.Log("Player set to Main Camera: " + player.name);
             }
         }
-        /*
-        if (healthBar == null)
-        {
-            healthBar = FindObjectOfType<floatingHealthBar>();
-        }
-        */
-        Patrol();
+
         playerHealth = player.GetComponentInChildren<healthbar>();
 
         if (playerHealth == null)
         {
             Debug.LogError("Player healthbar script not found!");
+        }
+
+        if (isBoss && freezeBossUntilTriggered)
+        {
+            bossActivated = false;
+            currentState = EnemyState.Frozen;
+
+            agent.isStopped = true;
+            agent.ResetPath();
+
+            animator.SetBool(isWalkingHash, false);
+            animator.SetBool(isRunningHash, false);
+            animator.SetBool(isAttackingHash, false);
+            animator.SetBool(isDyingHash, false);
+
+            if (activationTriggerObject == null)
+            {
+                Debug.LogWarning(gameObject.name + ": Boss is set to wait for trigger, but no activationTriggerObject is assigned.");
+            }
+            else
+            {
+                BossActivationTrigger trigger = activationTriggerObject.GetComponent<BossActivationTrigger>();
+
+                if (trigger == null)
+                {
+                    trigger = activationTriggerObject.AddComponent<BossActivationTrigger>();
+                }
+
+                trigger.Initialize(this);
+            }
+        }
+        else
+        {
+            bossActivated = true;
+            currentState = EnemyState.Patrolling;
+            Patrol();
         }
     }
 
@@ -109,6 +151,12 @@ public class EnemyYBotAI : MonoBehaviour
     {
         if (isDead) return;
         if (!ValidatePlayer()) return;
+
+        if (isBoss && freezeBossUntilTriggered && !bossActivated)
+            return;
+
+        if (currentState == EnemyState.Frozen)
+            return;
 
         float distance = GetDistanceToPlayer();
 
@@ -252,19 +300,24 @@ public class EnemyYBotAI : MonoBehaviour
         chaseTimer = 0f;
         isChasePaused = false;
 
-        if (currentState == EnemyState.Patrolling) return;
-
         AudioManager.Instance.Stop(AudioManager.SoundType.Running);
 
-        currentState = EnemyState.Patrolling;
+        if (currentState != EnemyState.Patrolling)
+        {
+            currentState = EnemyState.Patrolling;
+            Debug.Log("Player lost. Resuming patrol...");
+        }
+
         agent.isStopped = false;
 
         animator.SetBool(isAttackingHash, false);
         animator.SetBool(isRunningHash, false);
         animator.SetBool(isWalkingHash, true);
 
-        Debug.Log("Player lost. Resuming patrol...");
-        Patrol();
+        if (!agent.hasPath && !isWaiting)
+        {
+            Patrol();
+        }
     }
 
     private void HandlePatrolWaiting()
@@ -277,15 +330,21 @@ public class EnemyYBotAI : MonoBehaviour
         }
     }
 
-
     void Patrol()
     {
         Vector3 randomDirection = Random.insideUnitSphere * patrolRange + transform.position;
         NavMeshHit hit;
+
         if (NavMesh.SamplePosition(randomDirection, out hit, patrolRange, NavMesh.AllAreas))
         {
             agent.SetDestination(hit.position);
+            Debug.Log(gameObject.name + " patrol destination set to: " + hit.position);
             animator.SetBool(isWalkingHash, true);
+        }
+        else
+        {
+            Debug.LogWarning(gameObject.name + " could not find patrol point on NavMesh.");
+            animator.SetBool(isWalkingHash, false);
         }
     }
 
@@ -341,8 +400,6 @@ public class EnemyYBotAI : MonoBehaviour
         if (isDead) yield break;
         isDead = true;
 
-
-
         Debug.Log("Die() gestartet");
         Debug.Log("animator: " + animator);
         Debug.Log("agent: " + agent);
@@ -375,6 +432,19 @@ public class EnemyYBotAI : MonoBehaviour
         yield return new WaitUntil(() => animator.GetCurrentAnimatorStateInfo(0).IsName("Dying"));
         yield return new WaitForSeconds(animator.GetCurrentAnimatorStateInfo(0).length);
 
+        if (isBoss)
+        {
+            if (doorToOpen != null)
+            {
+                doorToOpen.Open();
+            }
+
+            if (spawnerToDisable != null)
+            {
+                spawnerToDisable.SetActive(false);
+            }
+        }
+
         Debug.Log(gameObject.name + " destroyed!");
         Destroy(gameObject);
     }
@@ -393,14 +463,41 @@ public class EnemyYBotAI : MonoBehaviour
         }
     }
 
+    public void ActivateBoss()
+    {
+        if (!isBoss)
+            return;
+
+        if (bossActivated)
+            return;
+
+        bossActivated = true;
+        currentState = EnemyState.Patrolling;
+
+        isWaiting = false;
+        isChasePaused = false;
+        chaseTimer = 0f;
+
+        agent.isStopped = false;
+        agent.ResetPath();
+
+        animator.SetBool(isWalkingHash, false);
+        animator.SetBool(isRunningHash, false);
+        animator.SetBool(isAttackingHash, false);
+        animator.SetBool(isDyingHash, false);
+
+        Debug.Log(gameObject.name + ": Boss activated.");
+
+        Patrol();
+    }
+
     void OnTriggerStay(Collider other)
     {
         Debug.Log("Enemy touched something: " + other.name);
 
         if (other.CompareTag("Player"))
-            Debug.Log("Enemy touched PLAYER");
-
         {
+            Debug.Log("Enemy touched PLAYER");
             if (currentState == EnemyState.Attacking)
             {
                 if (Time.time - lastAttackTime >= attackCooldown)
@@ -414,3 +511,5 @@ public class EnemyYBotAI : MonoBehaviour
         }
     }
 }
+
+
