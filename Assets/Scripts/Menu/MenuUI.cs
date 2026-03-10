@@ -1,50 +1,64 @@
 using UnityEngine;
-using TMPro;
 
 public class MenuUI : MonoBehaviour
 {
+    [Header("Menus")]
     public GameObject mainMenu;
-    public GameObject startPanel;
-    public GameObject namePanel;
-    public GameObject victoryPanel;
+    public GameObject pauseMenu;
+    public GameObject victoryMenu;
 
-    public TMP_InputField nameInputField;
+    [Header("Player")]
+    public Transform playerCamera;
+    public float menuDistance = 2f;
 
     void Start()
     {
-        startPanel.SetActive(true);
-        namePanel.SetActive(false);
-
-        if (victoryPanel != null)
-            victoryPanel.SetActive(false);
+        ShowMainMenu();
     }
 
-    public void OpenNamePanel()
+    void PositionMenu(GameObject menu)
     {
-        startPanel.SetActive(false);
-        namePanel.SetActive(true);
+        Vector3 spawnPos = playerCamera.position + playerCamera.forward * menuDistance;
+
+        menu.transform.position = spawnPos;
+
+        menu.transform.LookAt(playerCamera);
+        menu.transform.Rotate(0, 180, 0);
+    }
+
+    public void ShowMainMenu()
+    {
+        PositionMenu(mainMenu);
+
+        mainMenu.SetActive(true);
+        pauseMenu.SetActive(false);
+        victoryMenu.SetActive(false);
     }
 
     public void PlayGame()
     {
-        string playerName = nameInputField.text;
-        Debug.Log("Player Name: " + playerName);
-
-        // Menü schließen
         mainMenu.SetActive(false);
 
-        // Timer starten
         TimeTrialManager.Instance.StartTimer();
     }
 
-    public void ShowVictoryPanel()
+    public void ShowPauseMenu()
     {
-        Debug.Log("Victory Panel triggered");
+        PositionMenu(pauseMenu);
 
-        if (victoryPanel != null)
-        {
-            victoryPanel.SetActive(true);
-        }
+        pauseMenu.SetActive(true);
+    }
+
+    public void ResumeGame()
+    {
+        pauseMenu.SetActive(false);
+    }
+
+    public void ShowVictoryMenu()
+    {
+        PositionMenu(victoryMenu);
+
+        victoryMenu.SetActive(true);
     }
 
     public void ExitGame()

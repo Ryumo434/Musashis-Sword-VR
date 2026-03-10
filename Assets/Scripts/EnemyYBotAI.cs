@@ -30,6 +30,8 @@ public class EnemyYBotAI : MonoBehaviour
     [Header("Chase Pause")]
     [SerializeField] private float chaseDuration = 3f;
     [SerializeField] private float chasePause = 2f;
+    [SerializeField] private float enemyDamage = 10f;
+    [SerializeField] private float attackCooldown = 1.5f;
 
     private float chaseTimer = 0f;
     private bool isChasePaused = false;
@@ -44,6 +46,9 @@ public class EnemyYBotAI : MonoBehaviour
     private int isAttackingHash;
     private int isDyingHash;
     private int isRunningHash;
+
+    private float lastAttackTime;
+    private healthbar playerHealth;
 
     private void Awake()
     {
@@ -92,6 +97,12 @@ public class EnemyYBotAI : MonoBehaviour
         }
         */
         Patrol();
+        playerHealth = player.GetComponentInChildren<healthbar>();
+
+        if (playerHealth == null)
+        {
+            Debug.LogError("Player healthbar script not found!");
+        }
     }
 
     void Update()
@@ -123,7 +134,7 @@ public class EnemyYBotAI : MonoBehaviour
     {
         return Vector3.Distance(transform.position, player.position);
     }
-    
+
     private void HandlePlayerAttackInput(float distance)
     {
         bool attackInput =
@@ -379,6 +390,27 @@ public class EnemyYBotAI : MonoBehaviour
         {
             healthSlider.maxValue = maxHealth;
             healthSlider.value = currentHealth;
+        }
+    }
+
+    void OnTriggerStay(Collider other)
+    {
+        Debug.Log("Enemy touched something: " + other.name);
+
+        if (other.CompareTag("Player"))
+            Debug.Log("Enemy touched PLAYER");
+
+        {
+            if (currentState == EnemyState.Attacking)
+            {
+                if (Time.time - lastAttackTime >= attackCooldown)
+                {
+                    playerHealth.PlayerTakeDamage(enemyDamage);
+                    lastAttackTime = Time.time;
+
+                    Debug.Log("Player hit! Damage: " + enemyDamage);
+                }
+            }
         }
     }
 }
