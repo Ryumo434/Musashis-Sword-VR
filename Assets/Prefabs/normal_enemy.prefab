@@ -718,7 +718,7 @@ MonoBehaviour:
   moveSpeed: 1
   patrolRange: 10
   waitTime: 2
-  maxHealth: 100
+  maxHealth: 40
   chaseDuration: 3
   chasePause: 2
   enemyDamage: 10
