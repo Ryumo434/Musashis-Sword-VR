@@ -563,7 +563,13 @@ MonoBehaviour:
   maxHealth: 30
   chaseDuration: 3
   chasePause: 3
+  enemyDamage: 10
+  attackCooldown: 1.5
   currentHealth: 0
+  doorToOpen: {fileID: 0}
+  spawnerToDisable: {fileID: 0}
+  activationTriggerObject: {fileID: 0}
+  freezeBossUntilTriggered: 1
 --- !u!195 &65695054486460753
 NavMeshAgent:
   m_ObjectHideFlags: 0
@@ -601,7 +607,7 @@ CapsuleCollider:
     serializedVersion: 2
     m_Bits: 0
   m_LayerOverridePriority: 0
-  m_IsTrigger: 0
+  m_IsTrigger: 1
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 2
