@@ -3,6 +3,7 @@ using UnityEngine;
 public class BossEnemy : MonoBehaviour
 {
     private static BossEnemy instance;
+    [SerializeField] private AudioManager.SoundType musicType;
 
     private void Awake()
     {
@@ -22,6 +23,10 @@ public class BossEnemy : MonoBehaviour
         if (instance == this)
         {
             instance = null;
+        }
+        if (AudioManager.Instance != null)
+        {
+            AudioManager.Instance.Stop(musicType);
         }
     }
 }

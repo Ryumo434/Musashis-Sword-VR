@@ -1,6 +1,6 @@
 using UnityEngine;
 using System.Collections.Generic;
- 
+
 public class AudioManager : MonoBehaviour
 {
     public enum SoundType
@@ -14,25 +14,26 @@ public class AudioManager : MonoBehaviour
         EnemyMiddle_Damage_medium,
         Running,
         Explosion,
+        BackgroundMusic,
         Test
     }
- 
+
     [System.Serializable]
     public class Sound
     {
         public SoundType Type;
         public AudioClip Clip;
- 
+
         [Range(0f, 1f)]
         public float Volume = 1f;
- 
+
         [HideInInspector]
         public AudioSource Source;
     }
- 
+
     //Singleton
     public static AudioManager Instance;
- 
+
     //All sounds and their associated type - Set these in the inspector
     public Sound[] AllSounds;
 
@@ -40,14 +41,14 @@ public class AudioManager : MonoBehaviour
     private Dictionary<SoundType, Sound> _soundDictionary = new Dictionary<SoundType, Sound>();
     private Dictionary<SoundType, AudioSource> _loopingSources = new Dictionary<SoundType, AudioSource>();
     private AudioSource _musicSource;
- 
+
     private void Awake()
     {
         //Assign singleton
         Instance = this;
- 
+
         //Set up sounds
-        foreach(var s in AllSounds)
+        foreach (var s in AllSounds)
         {
             _soundDictionary[s.Type] = s;
         }
@@ -79,8 +80,8 @@ public class AudioManager : MonoBehaviour
         //Destroy the object
         Destroy(soundObj, s.Clip.length);
     }
- 
-  public void PlayLoop(SoundType type)
+
+    public void PlayLoop(SoundType type)
     {
         if (_loopingSources.ContainsKey(type))
             return; // bereits aktiv
@@ -120,14 +121,14 @@ public class AudioManager : MonoBehaviour
             Debug.LogWarning($"Music track {type} not found!");
             return;
         }
- 
+
         if (_musicSource == null)
         {
             var container = new GameObject("SoundTrackObj");
             _musicSource = container.AddComponent<AudioSource>();
             _musicSource.loop = true;
         }
- 
+
         _musicSource.clip = track.Clip;
         _musicSource.Play();
     }
